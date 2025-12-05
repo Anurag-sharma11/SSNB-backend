@@ -19,7 +19,6 @@ const allowedOrigins = [
   "http://localhost:5173",
   "https://patienthomecareservice.co.in",
   "https://www.patienthomecareservice.co.in",
-  "https://ssnb-backend.onrender.com",
 ];
 
 app.use(
@@ -33,18 +32,17 @@ app.use(
       }
     },
     methods: ["GET", "POST"],
-    credentials: true,
   })
 );
+
 // --------------------------------------------------
 
-// Parse JSON body
 app.use(express.json());
 
-// Create server (needed for socket.io)
+// Create HTTP server
 const server = http.createServer(app);
 
-// SOCKET.IO with CORS
+// Socket.io setup
 const io = new Server(server, {
   cors: {
     origin: allowedOrigins,
@@ -52,16 +50,13 @@ const io = new Server(server, {
   },
 });
 
-// Make socket available globally
 app.set("io", io);
 
-// SOCKET EVENTS
 io.on("connection", (socket) => {
   console.log("🟢 Client connected:", socket.id);
-
-  socket.on("disconnect", () =>
-    console.log("🔴 Client disconnected:", socket.id)
-  );
+  socket.on("disconnect", () => {
+    console.log("🔴 Client disconnected:", socket.id);
+  });
 });
 
 // ROUTES
@@ -73,6 +68,5 @@ app.get("/", (req, res) => {
   res.send("Nursing Bureau API is running...");
 });
 
-// SERVER START
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
