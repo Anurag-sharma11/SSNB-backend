@@ -19,10 +19,15 @@ const server = http.createServer(app);
 // ✅ Initialize socket.io
 const io = new Server(server, {
   cors: {
-    origin: "https://patienthomecareservice.co.in/", // allow all during dev
+    origin: [
+      "http://localhost:5173",
+      "https://patienthomecareservice.co.in",
+      "https://ssnb-backend.onrender.com"
+    ],
     methods: ["GET", "POST"],
   },
 });
+
 
 // ✅ Make io globally accessible (so we can emit from routes)
 app.set("io", io);
