@@ -1,10 +1,22 @@
 import Contact from "../models/contactModel.js";
 import nodemailer from "nodemailer";
 
+// Create transporter ONCE (not inside function)
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,      // smtp-relay.brevo.com
+  port: process.env.SMTP_PORT,      // 587
+  secure: false,
+  auth: {
+    user: process.env.SMTP_USER,    // your Brevo login email
+    pass: process.env.SMTP_PASS,    // your SMTP key
+  },
+});
+
 export const submitContactForm = async (req, res) => {
   try {
     const { name, contact, location, email, message } = req.body;
 
+    // Validate inputs
     if (!name || !contact || !location || !email || !message) {
       return res
         .status(400)
@@ -20,20 +32,9 @@ export const submitContactForm = async (req, res) => {
       message,
     });
 
-    // SMTP Transport (Brevo)
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: process.env.SMTP_PORT,
-      secure: false,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    });
-
-    // Email details
+    // Email sent to admin
     const adminMailOptions = {
-      from: `"Seva Sai Alerts" <${process.env.SMTP_USER}>`,
+      from: `"Seva Sai Nursing Bureau" <${process.env.SMTP_USER}>`,
       to: process.env.ADMIN_EMAIL,
       subject: "📩 New Contact Form Submission",
       html: `
@@ -43,13 +44,14 @@ export const submitContactForm = async (req, res) => {
         <p><strong>Location:</strong> ${location}</p>
         <p><strong>Email:</strong> ${email}</p>
         <p><strong>Message:</strong> ${message}</p>
+        <br/>
         <p><em>Submitted at: ${new Date().toLocaleString()}</em></p>
       `,
     };
 
-    // Send Email
+    // Send email
     await transporter.sendMail(adminMailOptions);
-    console.log("Email sent successfully!");
+    console.log("Email sent to admin successfully!");
 
     return res.status(201).json({
       success: true,
