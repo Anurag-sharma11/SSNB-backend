@@ -1,5 +1,5 @@
-import Brevo from "@getbrevo/brevo";
 import Contact from "../models/contactModel.js";
+import Brevo from "@getbrevo/brevo";
 
 export const submitContactForm = async (req, res) => {
   try {
@@ -20,42 +20,51 @@ export const submitContactForm = async (req, res) => {
       message,
     });
 
-    // Brevo API client
-    const apiInstance = new Brevo.TransactionalEmailsApi();
-    apiInstance.setApiKey(
-      Brevo.TransactionalEmailsApiApiKeys.apiKey,
-      process.env.BREVO_API_KEY
-    );
+    // -------------------------
+    // BREVO API CONFIG
+    // -------------------------
+    let apiInstance = new Brevo.TransactionalEmailsApi();
+    let apiKey = apiInstance.authentications["apiKey"];
+    apiKey.apiKey = process.env.BREVO_API_KEY;
 
-    // Email payload
-    const emailData = {
-      sender: { name: "Seva Sai Alerts", email: process.env.EMAIL_FROM },
-      to: [{ email: process.env.ADMIN_EMAIL }],
-      subject: "New Contact Form Submission",
-      htmlContent: `
-        <h2>New Contact Request</h2>
-        <p><strong>Name:</strong> ${name}</p>
-        <p><strong>Phone:</strong> ${contact}</p>
-        <p><strong>Location:</strong> ${location}</p>
-        <p><strong>Email:</strong> ${email}</p>
-        <p><strong>Message:</strong> ${message}</p>
-        <br><i>Received at: ${new Date().toLocaleString()}</i>
-      `,
-    };
+    // -------------------------
+    // EMAIL DATA
+    // -------------------------
+    let sendSmtpEmail = new Brevo.SendSmtpEmail();
 
-    // Send Email
-    await apiInstance.sendTransacEmail(emailData);
+    sendSmtpEmail.subject = "📩 New Contact Form Submission";
+    sendSmtpEmail.sender = { email: process.env.EMAIL_FROM, name: "Seva Sai Nursing Bureau" };
+    sendSmtpEmail.to = [{ email: process.env.ADMIN_EMAIL }];
 
-    return res.status(201).json({
+    sendSmtpEmail.htmlContent = `
+      <h2>New Contact Form Submission</h2>
+      <p><strong>Name:</strong> ${name}</p>
+      <p><strong>Contact:</strong> ${contact}</p>
+      <p><strong>Location:</strong> ${location}</p>
+      <p><strong>Email:</strong> ${email}</p>
+      <p><strong>Message:</strong> ${message}</p>
+      <hr/>
+      <small>Automatic email from Seva Sai Nursing Bureau</small>
+    `;
+
+    // -------------------------
+    // SEND EMAIL
+    // -------------------------
+    await apiInstance.sendTransacEmail(sendSmtpEmail);
+
+    console.log("📩 Admin email sent via Brevo API");
+
+    res.status(201).json({
       success: true,
-      message: "Form submitted & email sent successfully!",
+      message: "Form submitted & email sent to admin!",
       data: newContact,
     });
   } catch (error) {
-    console.error("❌ Error submitting contact form:", error);
-    return res.status(500).json({
+    console.log("❌ Brevo Email Error:", error);
+    res.status(500).json({
       success: false,
-      message: "Server error while submitting form.",
+      message: "Server error while sending email.",
+      error: error.message,
     });
   }
 };

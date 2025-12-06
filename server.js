@@ -14,16 +14,17 @@ connectDB();
 
 const app = express();
 
-// -------------------- CORS FIX --------------------
+// CORS allowed origins
 const allowedOrigins = [
   "http://localhost:5173",
   "https://patienthomecareservice.co.in",
   "https://www.patienthomecareservice.co.in",
+  "https://ssnb-backend.onrender.com",
 ];
 
 app.use(
   cors({
-    origin: function (origin, callback) {
+    origin: (origin, callback) => {
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
@@ -32,17 +33,15 @@ app.use(
       }
     },
     methods: ["GET", "POST"],
+    credentials: true,
   })
 );
 
-// --------------------------------------------------
-
 app.use(express.json());
 
-// Create HTTP server
+// HTTP + Socket.io
 const server = http.createServer(app);
 
-// Socket.io setup
 const io = new Server(server, {
   cors: {
     origin: allowedOrigins,
@@ -52,11 +51,12 @@ const io = new Server(server, {
 
 app.set("io", io);
 
+// Socket.io logs
 io.on("connection", (socket) => {
   console.log("🟢 Client connected:", socket.id);
-  socket.on("disconnect", () => {
-    console.log("🔴 Client disconnected:", socket.id);
-  });
+  socket.on("disconnect", () =>
+    console.log("🔴 Client disconnected:", socket.id)
+  );
 });
 
 // ROUTES
